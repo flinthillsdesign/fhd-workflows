@@ -9,5 +9,5 @@ on: push
 
 jobs:
   call-workflow:
-    uses: flinthillsdesign/fhd-workflows/wordpress.yml@master
+    uses: flinthillsdesign/fhd-workflows/.github/workflows/wordpress.yml@master
 ```
