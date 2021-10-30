@@ -1,0 +1,39 @@
+name: FHD WordPress test and deploy
+
+on:
+  workflow_call:
+    secrets:
+      ssh_private_key:
+        required: true
+
+jobs:
+  test-deploy:
+    runs-on: ubuntu-latest
+      services:
+        mysql:
+          image: mysql:5.7
+          ports: ["3306:3306"]
+          env:
+            MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+      steps:
+      - uses: actions/checkout@v2
+      - name: test
+        uses: dropseed/gitwp@master
+      - name: deploy
+        if: github.ref == 'refs/heads/master'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ssh_private_key }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" | base64 --decode > /tmp/key
+          chmod 600 /tmp/key
+
+          HOST=$(jq -r '.host' fhd.json)
+          NAME=$(jq -r '.name' fhd.json)
+          DOMAIN=$(jq -r 'domain' fhd.json)
+
+          echo "Running git pull over SSH"
+          ssh -i /tmp/key fhd@"$HOST" "cd sites/$NAME && git fetch origin master && git merge FETCH_HEAD"
+
+          echo "Pinging live site"
+          curl -LfsS -o /dev/null -w "%{http_code}" "http://$DOMAIN"
