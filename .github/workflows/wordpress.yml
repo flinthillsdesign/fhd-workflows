@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: test
-      uses: dropseed/gitwp@master
+      uses: dropseed/gitwp@v1
     - name: deploy
       if: github.ref == 'refs/heads/master'
       env:
