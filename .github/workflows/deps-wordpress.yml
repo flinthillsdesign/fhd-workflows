@@ -1,5 +1,8 @@
 name: Deps for WordPress
 
+on:
+  workflow_call: {}
+
 jobs:
   deps:
     runs-on: ubuntu-latest
