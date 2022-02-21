@@ -1,0 +1,30 @@
+name: FHD PHP deploy
+
+on:
+  workflow_call:
+    secrets:
+      ssh_private_key:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: deploy
+      if: github.ref == 'refs/heads/master'
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.ssh_private_key }}
+      run: |
+        echo "$SSH_PRIVATE_KEY" | base64 --decode > /tmp/key
+        chmod 600 /tmp/key
+
+        HOST=$(jq -r '.host' fhd.json)
+        NAME=$(jq -r '.name' fhd.json)
+        DOMAIN=$(jq -r '.domain' fhd.json)
+
+        echo "Running git pull over SSH"
+        ssh -i /tmp/key -o StrictHostKeyChecking=no fhd@"$HOST" "cd sites/$NAME && git fetch origin master && git merge FETCH_HEAD"
+
+        echo "Pinging live site (will trigger any errors to Sentry)"
+        curl -LfsS -o /dev/null -w "%{http_code}" "http://$DOMAIN"
